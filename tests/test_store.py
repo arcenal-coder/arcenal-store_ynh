@@ -13,7 +13,7 @@ class StoreTest(unittest.TestCase):
         manifest = tomllib.loads((ROOT / "manifest.toml").read_text(encoding="utf-8"))
         self.assertEqual(manifest["id"], "arcenal-store")
         self.assertFalse(manifest["integration"]["sso"])
-        self.assertNotIn("install", manifest)
+        self.assertEqual(manifest["install"], {})
         self.assertEqual(manifest["resources"], {})
 
     def test_store_owns_only_the_catalog_configuration(self) -> None:
