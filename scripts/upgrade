@@ -1,0 +1,11 @@
+#!/bin/bash
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+ynh_script_progression "Vérification du catalogue ARCenal..."
+arcenal_verifier_catalogue
+ynh_script_progression "Actualisation de l'ARCenal Store..."
+arcenal_ecrire_catalogue
+ynh_app_setting_set --key=catalogue_url --value="$(arcenal_url_catalogue)"
+arcenal_actualiser_catalogue

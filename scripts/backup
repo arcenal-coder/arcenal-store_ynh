@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+ynh_backup "/etc/yunohost/apps/${app}"
+catalogue="$(arcenal_fichier_catalogue)"
+test ! -e "$catalogue" || ynh_backup "$catalogue"
