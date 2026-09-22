@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source _common.sh
+source "$(dirname "$0")/_common.sh"
 source /usr/share/yunohost/helpers
 
 arcenal_systeme_est_installe && ynh_die "Désinstallez ARCenal Système avant de retirer ARCenal Store."

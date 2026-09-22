@@ -14,6 +14,7 @@ class StoreTest(unittest.TestCase):
         self.assertEqual(manifest["id"], "arcenal-store")
         self.assertFalse(manifest["integration"]["sso"])
         self.assertNotIn("install", manifest)
+        self.assertEqual(manifest["resources"], {})
 
     def test_store_owns_only_the_catalog_configuration(self) -> None:
         common = (ROOT / "scripts" / "_common.sh").read_text(encoding="utf-8")
@@ -30,6 +31,12 @@ class StoreTest(unittest.TestCase):
     def test_restore_uses_the_helper_with_no_missing_argument(self) -> None:
         restore = (ROOT / "scripts" / "restore").read_text(encoding="utf-8")
         self.assertIn("ynh_restore_everything", restore)
+
+    def test_lifecycle_scripts_load_their_common_file_from_any_directory(self) -> None:
+        scripts = ("install", "upgrade", "remove", "backup", "restore")
+        for script_name in scripts:
+            script = (ROOT / "scripts" / script_name).read_text(encoding="utf-8")
+            self.assertIn('source "$(dirname "$0")/_common.sh"', script)
 
 
 if __name__ == "__main__":
