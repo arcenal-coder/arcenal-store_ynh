@@ -4,8 +4,9 @@ source "$(dirname "$0")/_common.sh"
 source /usr/share/yunohost/helpers
 
 ynh_script_progression "Vérification du catalogue ARCenal..."
-arcenal_verifier_catalogue
+arcenal_verifier_catalogue || ynh_die "Le catalogue ARCenal est momentanément indisponible."
 ynh_script_progression "Actualisation de l'ARCenal Store..."
 arcenal_ecrire_catalogue
 ynh_app_setting_set --key=catalogue_url --value="$(arcenal_url_catalogue)"
-arcenal_actualiser_catalogue
+arcenal_synchroniser_catalogue
+arcenal_deployer_synchronisation

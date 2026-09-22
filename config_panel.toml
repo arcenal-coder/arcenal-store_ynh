@@ -1,0 +1,31 @@
+#:schema https://raw.githubusercontent.com/YunoHost/apps/main/schemas/config_panel.v1.schema.json
+version = "1.0"
+
+[catalogue]
+name.fr = "Catalogue ARCenal"
+help.fr = "La synchronisation quotidienne maintient le catalogue ARCenal à jour. Vous pouvez aussi demander une actualisation immédiate."
+
+    [catalogue.etat]
+    name.fr = "État de synchronisation"
+
+        [catalogue.etat.catalogue_last_sync_at]
+        ask.fr = "Dernière synchronisation"
+        type = "string"
+        readonly = true
+        bind = "null"
+
+        [catalogue.etat.catalogue_last_sync_result]
+        ask.fr = "Résultat"
+        type = "string"
+        readonly = true
+        bind = "null"
+
+    [catalogue.actions]
+    name.fr = "Actions"
+
+        [catalogue.actions.actualiser_catalogue]
+        ask.fr = "Actualiser le catalogue"
+        help.fr = "Télécharge immédiatement les dernières applications ARCenal publiées."
+        type = "button"
+        style = "success"
+        bind = "null"

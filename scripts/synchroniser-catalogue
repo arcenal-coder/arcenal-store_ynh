@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -euo pipefail
+
+readonly app="arcenal-store"
+
+source /usr/share/yunohost/helpers
+source "/etc/yunohost/apps/${app}/scripts/_common.sh"
+
+arcenal_synchroniser_catalogue

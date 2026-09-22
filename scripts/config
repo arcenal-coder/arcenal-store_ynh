@@ -1,0 +1,34 @@
+#!/bin/bash
+
+source "$(dirname "$0")/_common.sh"
+source /usr/share/yunohost/helpers
+
+arcenal_valeur_yaml() {
+    printf "'%s'\n" "$(printf '%s' "$1" | sed "s/'/''/g")"
+}
+
+arcenal_lire_reglage() {
+    ynh_app_setting_get --key="$1"
+}
+
+get__catalogue_last_sync_at() {
+    local date
+    date="$(arcenal_lire_reglage catalogue_last_sync_at)"
+    arcenal_valeur_yaml "${date:-Aucune synchronisation effectuée.}"
+}
+
+get__catalogue_last_sync_result() {
+    local resultat message
+    resultat="$(arcenal_lire_reglage catalogue_last_sync_result)"
+    message="$(arcenal_lire_reglage catalogue_last_sync_message)"
+    test -n "$message" || message="Le catalogue n'a pas encore été synchronisé."
+    arcenal_valeur_yaml "${resultat:+${resultat} — }${message}"
+}
+
+run__actualiser_catalogue() {
+    ynh_script_progression "Actualisation du catalogue ARCenal..."
+    systemctl start --wait "${app}-catalogue.service"
+    ynh_script_progression "Catalogue ARCenal actualisé."
+}
+
+ynh_app_config_run "$1"

@@ -4,6 +4,7 @@ source "$(dirname "$0")/_common.sh"
 source /usr/share/yunohost/helpers
 
 arcenal_systeme_est_installe && ynh_die "Désinstallez ARCenal Système avant de retirer ARCenal Store."
+arcenal_retirer_synchronisation
 ynh_script_progression "Restauration du catalogue précédent..."
 arcenal_restaurer_catalogue
 arcenal_actualiser_catalogue

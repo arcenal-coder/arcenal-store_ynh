@@ -4,7 +4,7 @@ id = "arcenal-store"
 name = "ARCenal Store"
 description.fr = "Active le catalogue ARCenal contrôlé dans YunoHost."
 description.en = "Enables the controlled ARCenal catalog in YunoHost."
-version = "1.0.2~ynh1"
+version = "1.1.0~ynh1"
 maintainers = ["ARCenal"]
 
 [upstream]

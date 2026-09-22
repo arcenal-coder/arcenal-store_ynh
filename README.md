@@ -17,3 +17,10 @@ pourra être sélectionné directement dans le store standard.
 
 La désinstallation d'ARCenal Store est volontairement bloquée tant qu'ARCenal
 Système est présent, afin de ne jamais rompre les mises à jour de ce dernier.
+
+## Synchronisation du catalogue
+
+ARCenal Store actualise le catalogue chaque jour. Dans la page de configuration
+de l'application, la section **Catalogue ARCenal** affiche la dernière
+synchronisation et son résultat ; le bouton **Actualiser le catalogue** lance
+la même opération immédiatement. Aucun accès SSH n'est nécessaire.
