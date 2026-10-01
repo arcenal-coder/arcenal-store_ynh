@@ -8,6 +8,5 @@ arcenal_initialiser_canal
 arcenal_verifier_catalogue || ynh_die "Le catalogue ARCenal est momentanément indisponible."
 ynh_script_progression "Actualisation de l'ARCenal Store..."
 arcenal_ecrire_catalogue
-ynh_app_setting_set --key=catalogue_url --value="$(arcenal_url_catalogue)"
 arcenal_synchroniser_catalogue
 arcenal_deployer_synchronisation

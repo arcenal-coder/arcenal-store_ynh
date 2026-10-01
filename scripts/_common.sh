@@ -58,6 +58,7 @@ arcenal_ecrire_catalogue() {
     url="$(arcenal_url_catalogue)"
     printf '%s\n' '- id: arcenal' "  url: ${url}" > "$catalogue"
     chmod 0644 "$catalogue"
+    ynh_app_setting_set --key=catalogue_url --value="$url"
 }
 
 arcenal_restaurer_catalogue() {

@@ -64,6 +64,8 @@ class StoreTest(unittest.TestCase):
         self.assertIn("flock 9", common)
         self.assertIn("arcenal_synchroniser_catalogue", synchronizer)
         self.assertNotIn("flock", synchronizer)
+        self.assertIn('app="arcenal-store"', synchronizer)
+        self.assertNotIn('readonly app="arcenal-store"', synchronizer)
         self.assertIn("run__actualiser_catalogue", config)
         self.assertIn("arcenal_synchroniser_catalogue", config)
         self.assertNotIn("systemctl start --wait", config)
@@ -106,6 +108,10 @@ class StoreTest(unittest.TestCase):
         self.assertIn("arcenal_initialiser_canal", common)
         self.assertIn("arcenal_initialiser_canal", install)
         self.assertIn("arcenal_initialiser_canal", upgrade)
+
+    def test_catalogue_url_tracks_the_selected_channel(self) -> None:
+        common = (ROOT / "scripts" / "_common.sh").read_text(encoding="utf-8")
+        self.assertIn('ynh_app_setting_set --key=catalogue_url --value="$url"', common)
 
 
 if __name__ == "__main__":
