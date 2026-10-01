@@ -45,7 +45,7 @@ get__catalogue_last_sync_result() {
 
 run__actualiser_catalogue() {
     ynh_script_progression "Actualisation du catalogue ARCenal..."
-    systemctl start --wait "${app}-catalogue.service"
+    arcenal_synchroniser_catalogue
     ynh_script_progression "Catalogue ARCenal actualisé."
 }
 

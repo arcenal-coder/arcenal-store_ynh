@@ -65,7 +65,8 @@ class StoreTest(unittest.TestCase):
         self.assertIn("arcenal_synchroniser_catalogue", synchronizer)
         self.assertNotIn("flock", synchronizer)
         self.assertIn("run__actualiser_catalogue", config)
-        self.assertIn('systemctl start --wait "${app}-catalogue.service"', config)
+        self.assertIn("arcenal_synchroniser_catalogue", config)
+        self.assertNotIn("systemctl start --wait", config)
 
     def test_scheduler_is_deployed_and_removed_with_the_store(self) -> None:
         common = (ROOT / "scripts" / "_common.sh").read_text(encoding="utf-8")
