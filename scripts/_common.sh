@@ -1,7 +1,29 @@
 #!/bin/bash
 
+arcenal_normaliser_canal() {
+    local canal="${1:-stable}"
+    case "$canal" in
+        stable|preview) printf '%s' "$canal" ;;
+        *) return 1 ;;
+    esac
+}
+
+arcenal_canal_catalogue() {
+    local canal
+    canal="$(ynh_app_setting_get --key=catalogue_channel)"
+    arcenal_normaliser_canal "${canal:-stable}"
+}
+
+arcenal_initialiser_canal() {
+    local canal
+    canal="$(ynh_app_setting_get --key=catalogue_channel)"
+    test -n "$canal" || ynh_app_setting_set --key=catalogue_channel --value=stable
+}
+
 arcenal_url_catalogue() {
-    printf '%s' 'https://raw.githubusercontent.com/arcenal-coder/arcenal-systeme-catalogue/main/stable'
+    local canal
+    canal="$(arcenal_canal_catalogue)" || return 1
+    printf '%s/%s' 'https://raw.githubusercontent.com/arcenal-coder/arcenal-systeme-catalogue/main' "$canal"
 }
 
 arcenal_fichier_catalogue() {

@@ -5,6 +5,17 @@ version = "1.0"
 name.fr = "Catalogue ARCenal"
 help.fr = "La synchronisation quotidienne maintient le catalogue ARCenal à jour. Vous pouvez aussi demander une actualisation immédiate."
 
+    [catalogue.canal]
+    name.fr = "Canal de diffusion"
+
+        [catalogue.canal.catalogue_channel]
+        ask.fr = "Applications proposées"
+        help.fr = "Stable propose les versions validées. Prévisualisation permet d’installer les candidates de recette avant leur promotion."
+        type = "select"
+        choices = ["stable", "preview"]
+        default = "stable"
+        bind = "null"
+
     [catalogue.etat]
     name.fr = "État de synchronisation"
 

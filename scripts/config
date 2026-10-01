@@ -11,6 +11,24 @@ arcenal_lire_reglage() {
     ynh_app_setting_get --key="$1"
 }
 
+get__catalogue_channel() {
+    local canal
+    canal="$(arcenal_lire_reglage catalogue_channel)"
+    arcenal_valeur_yaml "$(arcenal_normaliser_canal "${canal:-stable}")"
+}
+
+validate__catalogue_channel() {
+    arcenal_normaliser_canal "$catalogue_channel" > /dev/null || \
+        echo "Le canal doit être stable ou preview."
+}
+
+set__catalogue_channel() {
+    local canal
+    canal="$(arcenal_normaliser_canal "$catalogue_channel")" || \
+        ynh_die "Le canal demandé est invalide."
+    ynh_app_setting_set --key=catalogue_channel --value="$canal"
+}
+
 get__catalogue_last_sync_at() {
     local date
     date="$(arcenal_lire_reglage catalogue_last_sync_at)"

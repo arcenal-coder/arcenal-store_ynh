@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import tomllib
 import unittest
 from pathlib import Path
@@ -40,6 +41,10 @@ class StoreTest(unittest.TestCase):
 
     def test_panel_exposes_status_and_immediate_catalog_action(self) -> None:
         panel = tomllib.loads((ROOT / "config_panel.toml").read_text(encoding="utf-8"))
+        channel = panel["catalogue"]["canal"]["catalogue_channel"]
+        self.assertEqual(channel["type"], "select")
+        self.assertEqual(channel["choices"], ["stable", "preview"])
+        self.assertEqual(channel["default"], "stable")
         options = panel["catalogue"]["etat"]
         self.assertTrue(options["catalogue_last_sync_at"]["readonly"])
         self.assertTrue(options["catalogue_last_sync_result"]["readonly"])
@@ -73,6 +78,33 @@ class StoreTest(unittest.TestCase):
         self.assertIn('systemctl enable --now "${app}-catalogue.timer"', common)
         self.assertIn('systemctl stop "${app}-catalogue.service"', common)
         self.assertIn("OnCalendar=*-*-* 03:05:00", timer)
+
+    def test_channel_validation_accepts_only_published_channels(self) -> None:
+        script = ROOT / "scripts" / "_common.sh"
+        for channel in ("stable", "preview"):
+            result = subprocess.run(
+                ["bash", "-c", 'source "$1"; arcenal_normaliser_canal "$2"', "bash", str(script), channel],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.stdout, channel)
+        rejected = subprocess.run(
+            ["bash", "-c", 'source "$1"; arcenal_normaliser_canal "$2"', "bash", str(script), "invalid"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertEqual(rejected.stdout, "")
+
+    def test_upgrade_preserves_or_initializes_the_catalog_channel(self) -> None:
+        common = (ROOT / "scripts" / "_common.sh").read_text(encoding="utf-8")
+        install = (ROOT / "scripts" / "install").read_text(encoding="utf-8")
+        upgrade = (ROOT / "scripts" / "upgrade").read_text(encoding="utf-8")
+        self.assertIn("arcenal_initialiser_canal", common)
+        self.assertIn("arcenal_initialiser_canal", install)
+        self.assertIn("arcenal_initialiser_canal", upgrade)
 
 
 if __name__ == "__main__":

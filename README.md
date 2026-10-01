@@ -24,3 +24,9 @@ ARCenal Store actualise le catalogue chaque jour. Dans la page de configuration
 de l'application, la section **Catalogue ARCenal** affiche la dernière
 synchronisation et son résultat ; le bouton **Actualiser le catalogue** lance
 la même opération immédiatement. Aucun accès SSH n'est nécessaire.
+
+Le canal **Stable** reste sélectionné par défaut. Pour réaliser la recette
+d’une candidate, choisissez **Prévisualisation**, sauvegardez, puis utilisez
+**Actualiser le catalogue**. Les applications déjà installées sont alors
+proposées comme des mises à jour YunoHost normales ; aucun fichier applicatif
+n’est copié manuellement sur le serveur.
