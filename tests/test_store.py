@@ -1,15 +1,96 @@
 from __future__ import annotations
 
 import subprocess
+import tempfile
 import tomllib
 import unittest
 from pathlib import Path
 
+import yaml
 
 ROOT = Path(__file__).parents[1]
+OFFICIAL = {"id": "default", "url": "https://app.yunohost.org/default"}
+CUSTOM = {"id": "custom", "url": "https://example.org/catalog", "extra": True}
+ARCENAL_URL = "https://raw.githubusercontent.com/arcenal-coder/arcenal-systeme-catalogue/main/"
 
 
 class StoreTest(unittest.TestCase):
+    def run_catalogue(self, directory, action="arcenal_ecrire_catalogue", channel="stable"):
+        return subprocess.run(
+            [
+                "bash", "-e", "-c",
+                '''source "$1"
+arcenal_fichier_catalogue() { printf '%s/catalogue.yml' "$directory"; }
+arcenal_sauvegarde_catalogue() { printf '%s/previous.yml' "$directory"; }
+directory="$2"
+ynh_app_setting_get() { printf '%s' "$channel"; }
+ynh_app_setting_set() { :; }
+channel="$4"
+"$3"
+''',
+                "bash", str(ROOT / "scripts" / "_common.sh"), str(directory), action, channel,
+            ],
+            capture_output=True, text=True,
+        )
+
+    def test_catalogues_coexist_and_channel_changes_are_idempotent(self):
+        for initial in (
+            None, [], [OFFICIAL, CUSTOM], [{"id": "arcenal", "url": "old"}],
+            [OFFICIAL, CUSTOM, {"id": "arcenal", "url": "old"}, {"id": "arcenal", "url": "duplicate"}],
+            [{"id": "default", "url": None}],
+        ):
+            with self.subTest(initial=initial), tempfile.TemporaryDirectory() as directory:
+                catalogue = Path(directory) / "catalogue.yml"
+                if initial is not None:
+                    catalogue.write_text(yaml.safe_dump(initial))
+                for channel in ("stable", "stable", "preview"):
+                    result = self.run_catalogue(directory, channel=channel)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    sources = yaml.safe_load(catalogue.read_text())
+                    expected = [OFFICIAL]
+                    if initial and CUSTOM in initial:
+                        expected.append(CUSTOM)
+                    expected.append({"id": "arcenal", "url": ARCENAL_URL + channel})
+                    self.assertEqual(sources, expected)
+                self.assertEqual(catalogue.stat().st_mode & 0o777, 0o644)
+
+    def test_legacy_upgrade_recovers_sources_without_resurrecting_later_removals(self):
+        with tempfile.TemporaryDirectory() as directory:
+            catalogue = Path(directory) / "catalogue.yml"
+            catalogue.write_text(yaml.safe_dump([{"id": "arcenal", "url": "old"}]))
+            backup = Path(directory) / "previous.yml"
+            backup.write_text(yaml.safe_dump([OFFICIAL, CUSTOM]))
+            original_backup = backup.read_bytes()
+            result = self.run_catalogue(directory)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(CUSTOM, yaml.safe_load(catalogue.read_text()))
+            catalogue.write_text(yaml.safe_dump([OFFICIAL]))
+            result = self.run_catalogue(directory)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn(CUSTOM, yaml.safe_load(catalogue.read_text()))
+            self.assertEqual(backup.read_bytes(), original_backup)
+
+    def test_removal_preserves_current_sources_and_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            catalogue = Path(directory) / "catalogue.yml"
+            catalogue.write_text(yaml.safe_dump([
+                OFFICIAL, CUSTOM, {"id": "arcenal", "url": "old"},
+            ]))
+            (Path(directory) / "previous.yml").write_text(yaml.safe_dump([OFFICIAL]))
+            for _ in range(2):
+                result = self.run_catalogue(directory, action="arcenal_restaurer_catalogue")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(yaml.safe_load(catalogue.read_text()), [OFFICIAL, CUSTOM])
+
+    def test_invalid_catalogue_is_never_overwritten(self):
+        for content in ("[broken", "unexpected: mapping", "- id: missing-url"):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                catalogue = Path(directory) / "catalogue.yml"
+                catalogue.write_text(content)
+                result = self.run_catalogue(directory)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(catalogue.read_text(), content)
+
     def test_manifest_is_a_non_web_catalog_installer(self) -> None:
         manifest = tomllib.loads((ROOT / "manifest.toml").read_text(encoding="utf-8"))
         self.assertEqual(manifest["id"], "arcenal-store")
@@ -32,6 +113,8 @@ class StoreTest(unittest.TestCase):
     def test_restore_uses_the_helper_with_no_missing_argument(self) -> None:
         restore = (ROOT / "scripts" / "restore").read_text(encoding="utf-8")
         self.assertIn("ynh_restore_everything", restore)
+        self.assertIn("arcenal_ecrire_catalogue", restore)
+        self.assertLess(restore.index("ynh_restore_everything"), restore.index("arcenal_ecrire_catalogue"))
 
     def test_lifecycle_scripts_load_their_common_file_from_any_directory(self) -> None:
         scripts = ("install", "upgrade", "remove", "backup", "restore", "config")

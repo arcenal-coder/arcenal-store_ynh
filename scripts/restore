@@ -4,4 +4,5 @@ source "$(dirname "$0")/_common.sh"
 source /usr/share/yunohost/helpers
 
 ynh_restore_everything
+arcenal_ecrire_catalogue
 arcenal_deployer_synchronisation

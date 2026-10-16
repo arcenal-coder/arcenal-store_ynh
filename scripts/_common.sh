@@ -52,24 +52,81 @@ arcenal_sauvegarder_catalogue() {
     : > "${sauvegarde}.absent"
 }
 
-arcenal_ecrire_catalogue() {
-    local catalogue url
+arcenal_modifier_catalogues() {
+    local catalogue sauvegarde url
     catalogue="$(arcenal_fichier_catalogue)"
-    url="$(arcenal_url_catalogue)"
-    printf '%s\n' '- id: arcenal' "  url: ${url}" > "$catalogue"
-    chmod 0644 "$catalogue"
+    sauvegarde="$(arcenal_sauvegarde_catalogue)"
+    url="$2"
+    python3 - "$catalogue" "$sauvegarde" "$1" "$url" <<'PY'
+import os
+import sys
+import tempfile
+from pathlib import Path
+
+import yaml
+
+catalogue, sauvegarde = map(Path, sys.argv[1:3])
+action, url = sys.argv[3:5]
+
+
+def lire(path):
+    if not path.exists():
+        return []
+    sources = yaml.safe_load(path.read_text())
+    if sources is None:
+        return []
+    if not isinstance(sources, list) or any(
+        not isinstance(source, dict)
+        or not isinstance(source.get("id"), str)
+        or "url" not in source
+        or (source["url"] is not None and not isinstance(source["url"], str))
+        for source in sources
+    ):
+        raise ValueError(f"Configuration des catalogues invalide : {path}")
+    return sources
+
+
+sources = [source for source in lire(catalogue) if source["id"] != "arcenal"]
+if action == "ajouter" and not sources:
+    # Recover sources hidden by versions that replaced the whole configuration.
+    ids = {source["id"] for source in sources}
+    for source in lire(sauvegarde):
+        if source["id"] != "arcenal" and source["id"] not in ids:
+            sources.append(source)
+            ids.add(source["id"])
+
+officiel = next((source for source in sources if source["id"] == "default"), None)
+if officiel is None:
+    sources.insert(0, {"id": "default", "url": "https://app.yunohost.org/default"})
+else:
+    officiel["url"] = "https://app.yunohost.org/default"
+if action == "ajouter":
+    sources.append({"id": "arcenal", "url": url})
+
+# Write atomically so a failed conversion never leaves a truncated configuration.
+fd, temporary = tempfile.mkstemp(prefix=".apps_catalog-", dir=catalogue.parent)
+try:
+    with os.fdopen(fd, "w") as stream:
+        yaml.safe_dump(sources, stream, sort_keys=False)
+        stream.flush()
+        os.fsync(stream.fileno())
+        os.fchmod(stream.fileno(), 0o644)
+    os.replace(temporary, catalogue)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+PY
+}
+
+arcenal_ecrire_catalogue() {
+    local url
+    url="$(arcenal_url_catalogue)" || return 1
+    arcenal_modifier_catalogues ajouter "$url" || return 1
     ynh_app_setting_set --key=catalogue_url --value="$url"
 }
 
 arcenal_restaurer_catalogue() {
-    local catalogue sauvegarde
-    catalogue="$(arcenal_fichier_catalogue)"
-    sauvegarde="$(arcenal_sauvegarde_catalogue)"
-    if test -f "$sauvegarde"; then
-        cp --preserve=mode,timestamps "$sauvegarde" "$catalogue"
-        return 0
-    fi
-    test -f "${sauvegarde}.absent" && ynh_safe_rm "$catalogue"
+    arcenal_modifier_catalogues retirer ""
 }
 
 arcenal_actualiser_catalogue() {
